@@ -1,4 +1,22 @@
-- name: Install Dependencies
+name: Zenmail Ninja Scraper
+on:
+  repository_dispatch:
+    types: [manual_trigger]
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
         run: |
           npm install
           # Isse Puppeteer ko bolo ke Chrome download mat kare, hum system wala use karenge
