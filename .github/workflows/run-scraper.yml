@@ -1,10 +1,8 @@
 name: Zenmail Ninja Scraper
 on:
   repository_dispatch:
-    types: [manual_trigger]  # Website se signal ayega
-  schedule:
-    - cron: '*/5 * * * *'    # Har 5 min baad OTP check karne ke liye
-  workflow_dispatch:         # Button click ke liye
+    types: [manual_trigger]
+  workflow_dispatch:
 
 jobs:
   scrape:
@@ -19,9 +17,15 @@ jobs:
           node-version: '18'
 
       - name: Install Dependencies
-        run: npm install
+        # Isse puppeteer jaldi install hoga bina faltu chrome download kiye
+        run: |
+          npm install
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
 
       - name: Run Scraper
         run: node scraper.js
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+          PUPPETEER_EXECUTABLE_PATH: '/usr/bin/google-chrome'
