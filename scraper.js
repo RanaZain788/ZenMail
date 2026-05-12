@@ -19,11 +19,13 @@ const db = admin.database();
 async function runZenmailBot() {
     const browser = await puppeteer.launch({
         headless: "new",
-        executablePath: '/usr/bin/google-chrome', // Ye line zaroori hai
+        // Ubuntu par Chrome yahan hota hai, install karne ki zaroorat nahi
+        executablePath: '/usr/bin/google-chrome',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage'
+            '--disable-dev-shm-usage',
+            '--disable-gpu'
         ]
     });
     const page = await browser.newPage();
