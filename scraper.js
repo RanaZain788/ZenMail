@@ -19,15 +19,29 @@ const db = admin.database();
 async function runZenmailBot() {
     const browser = await puppeteer.launch({
         headless: "new",
-        // Ubuntu par Chrome yahan hota hai, install karne ki zaroorat nahi
-        executablePath: '/usr/bin/google-chrome',
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu'
-        ]
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
+    const page = await browser.newPage();
+
+    // Ninja Mail ko lage ke hum asli insaan hain
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
+
+    console.log("Ninja Mail khul rahi hai...");
+    await page.goto('https://tempmail.ninja/', { waitUntil: 'networkidle2', timeout: 60000 });
+
+    try {
+        // 30 seconds ki jagah 60 seconds wait karo
+        console.log("Email ka intezar ho raha hai...");
+        await page.waitForSelector('#email_id', { timeout: 60000 });
+
+        const email = await page.$eval('#email_id', el => el.value);
+        console.log("Dhamaka! Email mil gaya:", email);
+
+        // Yahan apna Firebase wala code rehne dena...
+    } catch (err) {
+        console.log("Masla ho gaya: Email load nahi hua. Screenshot le raha hoon...");
+        await page.screenshot({ path: 'error_screen.png' });
+    }
     const page = await browser.newPage();
 
     try {
