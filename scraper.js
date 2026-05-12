@@ -42,7 +42,6 @@ async function runZenmailBot() {
         console.log("Masla ho gaya: Email load nahi hua. Screenshot le raha hoon...");
         await page.screenshot({ path: 'error_screen.png' });
     }
-    const page = await browser.newPage();
 
     try {
         // 1. Check for Pending Orders
