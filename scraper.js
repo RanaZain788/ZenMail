@@ -10,7 +10,7 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        databaseURL: "https://zenmail-1.firebaseio.com" // APNA URL DALEIN
+        databaseURL: "https://zenmail-1-default-rtdb.firebaseio.com/" // APNA URL DALEIN
     });
 }
 
@@ -19,7 +19,12 @@ const db = admin.database();
 async function runZenmailBot() {
     const browser = await puppeteer.launch({
         headless: "new",
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        executablePath: '/usr/bin/google-chrome', // Ye line zaroori hai
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage'
+        ]
     });
     const page = await browser.newPage();
 
@@ -37,10 +42,10 @@ async function runZenmailBot() {
             await page.waitForSelector('#email_id');
 
             const email = await page.$eval('#email_id', el => el.value);
-            
+
             // Extract Cookies (Bohat Zaroori!)
             const cookies = await page.cookies();
-            
+
             // Save to Firebase
             const expiry = Date.now() + (20 * 60 * 1000); // 20 mins
             await db.ref(`active_mails/${uid}`).set({
@@ -62,7 +67,7 @@ async function runZenmailBot() {
         if (activeMails) {
             for (const uid in activeMails) {
                 const data = activeMails[uid];
-                
+
                 // Expiry Check
                 if (Date.now() > data.expiry) {
                     await db.ref('active_mails/' + uid).remove();
