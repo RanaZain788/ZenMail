@@ -1,0 +1,21 @@
+{
+  "name": "zenmail-bot",
+  "version": "2.0.0",
+  "description": "ZenMail Pro - Premium Temp Mail Scraper",
+  "main": "scraper.js",
+  "scripts": {
+    "scrape": "node scraper.js pre_scrape",
+    "cleanup": "node scraper.js cleanup",
+    "assign": "node scraper.js assign",
+    "check-otp": "node scraper.js check_otp"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0",
+    "firebase-admin": "^11.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
