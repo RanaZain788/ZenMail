@@ -6,7 +6,6 @@ on:
     - cron: '*/6 * * * *'
 
   # Run cleanup every hour
-  schedule:
     - cron: '0 * * * *'
 
   # Manual triggers
