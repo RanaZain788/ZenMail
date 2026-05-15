@@ -1,9 +1,6 @@
 name: ZenMail Pro - 24/7 Email Scraper
 
-      - name: Install Dependencies
-        run: |
-          echo "📦 Installing dependencies..."
-          npm install
+      
 
 on:
   schedule:
@@ -42,15 +39,10 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install Dependencies
+      -- name: Install Dependencies
         run: |
-          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ] || [ -f yarn.lock ]; then
-            echo "📦 Lock file found, using npm ci..."
-            npm ci
-          else
-            echo "⚠️ No lock file found, using npm install..."
-            npm install
-          fi
+          echo "📦 Installing dependencies..."
+          npm instal
 
       - name: Install Chrome Dependencies
         run: |
