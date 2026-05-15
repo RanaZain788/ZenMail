@@ -1,15 +1,16 @@
 name: ZenMail Pro - Cleanup Old Emails
 
 on:
-  # Run every hour
   schedule:
     - cron: '0 * * * *'
-
   workflow_dispatch:
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
     steps:
       - name: Checkout Code
@@ -22,18 +23,21 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ] || [ -f yarn.lock ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Cleanup Old Emails
-        run: node scraper.js cleanup
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scraper.js cleanup 2>&1 | tee -a cleanup.log
 
       - name: Upload Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cleanup-logs
+          name: cleanup-logs-${{ github.run_id }}
           path: |
             *.log
           retention-days: 1
