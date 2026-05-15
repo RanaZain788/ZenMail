@@ -1,5 +1,10 @@
 name: ZenMail Pro - 24/7 Email Scraper
 
+      - name: Install Dependencies
+        run: |
+          echo "📦 Installing dependencies..."
+          npm install
+
 on:
   schedule:
     - cron: '0 */6 * * *'
