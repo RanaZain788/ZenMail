@@ -1,5 +1,10 @@
 name: ZenMail Pro - Cleanup Old Emails
 
+      - name: Install Dependencies
+        run: |
+          echo "📦 Installing dependencies..."
+          npm install
+
 on:
   schedule:
     - cron: '0 * * * *'
