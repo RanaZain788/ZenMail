@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const admin = require('firebase-admin');
 
-// Stealth mode on karo
+// Stealth mode ON
 puppeteer.use(StealthPlugin());
 
 // Firebase Service Account from environment variable
