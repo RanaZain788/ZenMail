@@ -1,14 +1,10 @@
 name: ZenMail Pro - 24/7 Email Scraper
 
 on:
-  # Run every 6 minutes to pre-scrape emails
+  # Safety net: agar chain toot jaye to har 6 ghante me restart
   schedule:
-    - cron: '*/6 * * * *'
+    - cron: '0 */6 * * *'
 
-  # Run cleanup every hour
-    - cron: '0 * * * *'
-
-  # Manual triggers
   workflow_dispatch:
     inputs:
       mode:
@@ -30,6 +26,11 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
 
+    env:
+      # Node 20 deprecation warning fix
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -42,43 +43,94 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm ci
-          # Install Chrome dependencies for Puppeteer
+          # Agar lock file nahi hai to npm install use karo
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ] || [ -f yarn.lock ]; then
+            npm ci
+          else
+            echo "⚠️ No lock file found, using npm install..."
+            npm install
+          fi
+          
+          # Puppeteer ke liye Chrome dependencies
           sudo apt-get update
-          sudo apt-get install -y             libnss3             libatk-bridge2.0-0             libxss1             libgtk-3-0             libgbm-dev             libasound2
+          sudo apt-get install -y \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libxss1 \
+            libgtk-3-0 \
+            libgbm-dev \
+            libasound2 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libxtst6 \
+            libpangocairo-1.0-0 \
+            libatspi2.0-0 \
+            libcups2
 
-      - name: Run Pre-Scrape (Every 6 min)
+      - name: Run Pre-Scrape (Continuous 5-Hour Loop)
         if: github.event.inputs.mode == 'pre_scrape' || github.event.inputs.mode == ''
-        run: node scraper.js pre_scrape
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        continue-on-error: true
+        run: |
+          echo "🚀 Starting 24/7 pre-scrape loop..."
+          echo "⏰ Running for ~5 hours, scraping every 90 seconds"
+          
+          # 5 ghante = 18000 seconds
+          END_TIME=$(($(date +%s) + 18000))
+          COUNTER=1
+          
+          while [ $(date +%s) -lt $END_TIME ]; do
+            echo ""
+            echo "========================================"
+            echo "🔄 Cycle $COUNTER | $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "========================================"
+            
+            # Scraper chalao aur log file me likho
+            node scraper.js pre_scrape 2>&1 | tee -a scraper.log || true
+            
+            COUNTER=$((COUNTER + 1))
+            
+            # 90 seconds wait (demand ke hisaab se adjust karle)
+            echo "😴 Sleeping for 90 seconds..."
+            sleep 90
+          done
+          
+          echo "✅ Loop completed. Total cycles: $COUNTER"
 
-      - name: Run Cleanup (Hourly)
+      - name: Run Cleanup
         if: github.event.inputs.mode == 'cleanup'
-        run: node scraper.js cleanup
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        continue-on-error: true
+        run: node scraper.js cleanup 2>&1 | tee -a cleanup.log
 
       - name: Assign Email to User
         if: github.event.inputs.mode == 'assign'
-        run: node scraper.js assign ${{ github.event.inputs.userId }}
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "${{ github.event.inputs.userId }}" ]; then
+            echo "❌ User ID required for assign mode"
+            exit 1
+          fi
+          node scraper.js assign ${{ github.event.inputs.userId }} 2>&1 | tee -a assign.log
 
       - name: Check OTP
         if: github.event.inputs.mode == 'check_otp'
-        run: node scraper.js check_otp ${{ github.event.inputs.userId }}
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "${{ github.event.inputs.userId }}" ]; then
+            echo "❌ User ID required for check_otp mode"
+            exit 1
+          fi
+          node scraper.js check_otp ${{ github.event.inputs.userId }} 2>&1 | tee -a otp.log
 
       - name: Upload Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: scraper-logs
+          name: logs-${{ github.run_id }}-${{ github.event.inputs.mode || 'pre_scrape' }}
           path: |
             *.log
-            npm-debug.log*
           retention-days: 1
+
+      - name: Trigger Next Run (Keep Chain Alive 🔗)
+        if: always() && (github.event.inputs.mode == 'pre_scrape' || github.event.inputs.mode == '')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "🔗 Triggering next workflow run..."
+          gh workflow run run-scraper.yml -f mode=pre_scrape
